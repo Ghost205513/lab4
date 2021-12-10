@@ -22,6 +22,9 @@ part read_part(char *s);
 char *freadline_(FILE *file);
 void copy_part(part *dst, part *src);
 void free_(part *mas, size_t *n);
+int check_natural(char *s);
+part gen_part();
+char gen_char();
 
 
 int main(){
@@ -35,11 +38,8 @@ int main(){
             switch (input[0]) {
                 case '0':
                     free(input);
-                    if(data){
-                        for (int i = 0; i < n; i++)
-                            free(data[i].name);
-                        free(data);
-                    }
+                    if(data)
+                        free_(data, &n);
                     printf("Program end.\n");
                     return 0;
                 case '1':
@@ -256,6 +256,8 @@ part *input_(part *mas, size_t *n){
                             free(str);
                             str = freadline_(file);
                         }
+                        if (mas)
+                            free(str);
                         free(input);
                         fclose(file);
                         help(0, 1);
@@ -263,14 +265,20 @@ part *input_(part *mas, size_t *n){
                     } else{
                         printf("File can't open.\n");
                         help(1, 0);
-                        free(str);
                         free(input);
                         break;
                     }
                 case '4':
                     printf("Enter amount of elements data.\n");
-
-                    //random generation of data
+                    str = readline_();
+                    *n = check_natural(str);
+                    if(*n){
+                        mas = calloc(*n, sizeof(part));
+                        for(int i = 0; i < *n; i++)
+                            mas[i] = gen_part();
+                    } else{
+                        printf("Wrong format of argument \"amount of elements data\".\n");
+                    }
                     free(input);
                     return mas;
                 default:
@@ -282,6 +290,22 @@ part *input_(part *mas, size_t *n){
             free(input);
         }
     }
+}
+
+part gen_part(){
+    part temp;
+    for(int i = 0; i < 8; i++)
+        temp.id[i] = gen_char();
+    int n = rand() % 100 + 1;
+    temp.name = calloc(n + 1, sizeof(char));
+    for(int i = 0; i < n; i++)
+        temp.name[i] = gen_char();
+    temp.amount = rand() % 10000000 + 1;
+    return temp;
+}
+
+char gen_char(){
+    return (char) (rand() % 2 ? rand() % 26 + 97 : rand() % 26 + 65);
 }
 
 part *treat(part *mas, size_t *n){
