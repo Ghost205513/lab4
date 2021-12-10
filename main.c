@@ -433,25 +433,10 @@ part read_part(char *s){
     if (id && name && amount && !next){
         if(strlen(id) == 8){
             amount_i = check_natural(amount);
-            /**if(!amount_i){
+            if(!amount_i){
                 temp.name = NULL;
                 printf("Wrong format of argument \"amount\".\n");
                 return temp;
-            }**/
-            if(*amount == '0'){
-                temp.name = NULL;
-                printf("Wrong format of argument \"amount\".\n");
-                return temp;
-            }
-            while(*amount){
-                if(*amount >= 48 && *amount <= 57){
-                    amount_i = amount_i * 10 + ((int) *amount - 48);
-                    amount += 1;
-                } else {
-                    temp.name = NULL;
-                    printf("Wrong format of argument \"amount\".\n");
-                    return temp;
-                }
             }
             size_t i = 0;
             while(name[i]){
