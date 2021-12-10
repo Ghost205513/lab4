@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
+#include <time.h>
 
 typedef struct part{
     char id[9];
@@ -24,6 +25,7 @@ void free_(part *mas, size_t *n);
 
 
 int main(){
+    srand(time(NULL));
     part *data = NULL;
     size_t n = 0;
     help(0, 0);
@@ -265,9 +267,9 @@ part *input_(part *mas, size_t *n){
                         free(input);
                         break;
                     }
-                    //reading file
                 case '4':
                     printf("Enter amount of elements data.\n");
+
                     //random generation of data
                     free(input);
                     return mas;
@@ -376,6 +378,21 @@ part *sort_menu(part *mas, size_t n){
             free(input);
         }
     }
+}
+
+int check_natural(char *s){
+    int ans = 0;
+    if(*s == '0')
+        return 0;
+    while(*s){
+        if(*s >= 48 && *s <= 57){
+            ans = ans * 10 + ((int) *s - 48);
+            s += 1;
+        } else {
+            return 0;
+        }
+    }
+    return ans;
 }
 
 part read_part(char *s){
