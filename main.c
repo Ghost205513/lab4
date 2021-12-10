@@ -17,7 +17,7 @@ part *input_(part *mas, size_t *n);
 part *str_treat(char *str);
 part *treat(part *mas, size_t *n);
 part *timing(part *mas, size_t n);
-void output(part *mas, size_t n);
+int output(part *mas, size_t n);
 part read_part(char *s);
 char *freadline_(FILE *file);
 void copy_part(part *dst, part *src);
@@ -51,9 +51,6 @@ int main(){
                     break;
                 case '2':
                     data = input_(data, &n);
-                    for (int i = 0; i < n; i++){
-                        printf("id: %s, name: %s, amount: %d.\n", data[i].id, data[i].name, (int) data[i].amount);
-                    }
                     free(input);
                     break;
                 case '3':
@@ -126,6 +123,12 @@ void help(int menu, int mod){
                    "2. Quick sort.\n"
                    "3. Pair insertion sort.\n"
                    "4. Radix sort.\n");
+            break;
+        case 4:
+            printf("0. Back.\n"
+                   "1. Help.\n"
+                   "2. Output to console.\n"
+                   "3. Output to file.\n");
             break;
         default:
             printf("Wrong command, try again. Enter \"1\" for help\n");
@@ -488,8 +491,49 @@ void copy_part(part *dst, part *src){
 part *timing(part *mas, size_t n){
     return &mas[0];
 }
-void output(part *mas, size_t n){
-
+int output(part *mas, size_t n){
+    help(4, 0);
+    while(1) {
+        char *input = readline_();
+        if (input && (strlen(input) == 1)) {
+            switch (input[0]) {
+                case '0':
+                    help(0,1);
+                    free(input);
+                    return 0;
+                case '1':
+                    help(4,0);
+                    free(input);
+                    break;
+                case '2':
+                    for (int i = 0; i < n; i++)
+                        printf("id: %s, name: %s, amount: %d.\n", mas[i].id, mas[i].name, (int) mas[i].amount);
+                    free(input);
+                    break;
+                case '3':
+                    free(input);
+                    printf("Enter path to file:\n");
+                    input = readline_();
+                    FILE *file = fopen(input, "w");
+                    free(input);
+                    if(file){
+                        for (int i = 0; i < n; i++)
+                            fprintf(file, "%s %s %d\n", mas[i].id, mas[i].name, (int) mas[i].amount);
+                        fclose(file);
+                    } else{
+                        printf("File can't open or make.\n");
+                        help(4, 0);
+                    }
+                    break;
+                default:
+                    help(-1, -1);
+                    free(input);
+            }
+        } else {
+            help(-1, -1);
+            free(input);
+        }
+    }
 }
 //read_part - checked
 //readline_ - checked
