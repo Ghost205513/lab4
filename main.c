@@ -269,9 +269,10 @@ part *input_(part *mas, size_t *n){
                         break;
                     }
                 case '4':
-                    printf("Enter amount of elements data.\n");
+                    printf("Enter amount of elements data:\n");
                     str = readline_();
                     *n = check_natural(str);
+                    free(str);
                     if(*n){
                         mas = calloc(*n, sizeof(part));
                         for(int i = 0; i < *n; i++)
@@ -280,6 +281,7 @@ part *input_(part *mas, size_t *n){
                         printf("Wrong format of argument \"amount of elements data\".\n");
                     }
                     free(input);
+                    help(0, 1);
                     return mas;
                 default:
                     help(-1, -1);
@@ -296,6 +298,7 @@ part gen_part(){
     part temp;
     for(int i = 0; i < 8; i++)
         temp.id[i] = gen_char();
+    temp.id[8] = '\0';
     int n = rand() % 100 + 1;
     temp.name = calloc(n + 1, sizeof(char));
     for(int i = 0; i < n; i++)
@@ -429,6 +432,12 @@ part read_part(char *s){
 
     if (id && name && amount && !next){
         if(strlen(id) == 8){
+            amount_i = check_natural(amount);
+            /**if(!amount_i){
+                temp.name = NULL;
+                printf("Wrong format of argument \"amount\".\n");
+                return temp;
+            }**/
             if(*amount == '0'){
                 temp.name = NULL;
                 printf("Wrong format of argument \"amount\".\n");
