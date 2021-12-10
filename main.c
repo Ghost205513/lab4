@@ -14,7 +14,6 @@ void help(int menu, int mod);
 char *readline_();
 
 part *input_(part *mas, size_t *n);
-part *str_treat(char *str);
 part *treat(part *mas, size_t *n);
 part *timing(part *mas, size_t n);
 int output(part *mas, size_t n);
@@ -25,7 +24,11 @@ void free_(part *mas, size_t *n);
 int check_natural(char *s);
 part gen_part();
 char gen_char();
-
+part *sort_menu(part *mas, size_t n);
+void swap(void *one, void *two, size_t size);
+void quick_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
+void pair_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
+void radix_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
 
 int main(){
     srand(time(NULL));
@@ -200,7 +203,6 @@ char *freadline_(FILE *file){
 
 part *input_(part *mas, size_t *n){
     help(1, 0);
-    char *str;
     while(1) {
         char *input = readline_();
         if (input && (strlen(input) == 1)) {
@@ -217,65 +219,65 @@ part *input_(part *mas, size_t *n){
                     free(input);
                     break;
                 case '2':
+                    free(input);
                     printf("Use Ctrl+D to stop input data.\n");
-                    str = readline_();
-                    while(str){
+                    input = readline_();
+                    while(input){
                         part temp;
-                        temp = read_part(str);
+                        temp = read_part(input);
                         if(temp.name) {
                             *n += 1;
                             mas = realloc(mas, (*n) * sizeof(part));
                             copy_part(mas + (*n - 1), &temp);
                         } else
                             printf("Try again.\n");
-                        free(str);
+                        free(input);
                         free(temp.name);
-                        str = readline_();
+                        input = readline_();
                     }
-                    free(input);
                     help(0, 1);
                     return mas;
                 case '3':
+                    free(input);
                     printf("Enter path to file:\n");
-                    str = readline_();
-                    FILE *file = fopen(str, "r");
-                    free(str);
+                    input = readline_();
+                    FILE *file = fopen(input, "r");
+                    free(input);
                     if(file){
-                        str = freadline_(file);
-                        while (str){
+                        input = freadline_(file);
+                        while (input){
                             part temp;
-                            temp = read_part(str);
+                            temp = read_part(input);
                             if(temp.name) {
                                 *n += 1;
                                 mas = realloc(mas, (*n) * sizeof(part));
                                 copy_part(mas + (*n - 1), &temp);
                                 free(temp.name);
                             } else{
-                                free(str);
+                                free(input);
                                 free_(mas, n);
                                 mas = NULL;
                                 break;
                             }
-                            free(str);
-                            str = freadline_(file);
+                            free(input);
+                            input = freadline_(file);
                         }
                         if (mas)
-                            free(str);
-                        free(input);
+                            free(input);
                         fclose(file);
                         help(0, 1);
                         return mas;
                     } else{
                         printf("File can't open.\n");
                         help(1, 0);
-                        free(input);
                         break;
                     }
                 case '4':
+                    free(input);
                     printf("Enter amount of elements data:\n");
-                    str = readline_();
-                    *n = check_natural(str);
-                    free(str);
+                    input = readline_();
+                    *n = check_natural(input);
+                    free(input);
                     if(*n){
                         mas = calloc(*n, sizeof(part));
                         for(int i = 0; i < *n; i++)
@@ -283,7 +285,6 @@ part *input_(part *mas, size_t *n){
                     } else{
                         printf("Wrong format of argument \"amount of elements data\".\n");
                     }
-                    free(input);
                     help(0, 1);
                     return mas;
                 default:
@@ -329,30 +330,46 @@ part *treat(part *mas, size_t *n){
                     free(input);
                     break;
                 case '2':
-                    printf("Enter index to insert:\n");
-                    size_t index;
-                    scanf("%d\n", &index);
-                    if (0 < index && (index <= *n + 1)) {
-                        mas = realloc(mas, (*n + 1) * sizeof(part));
-                        for (size_t i = *n; i > index; i--)
-                            mas[i] = mas[i - 1];
-                        printf("Enter new element:\n");
-                        //insert part
-                        *n += 1;
-                    }
                     free(input);
-                    return mas;
+                    printf("Enter index to insert:\n");
+                    input = readline_();
+                    int index = check_natural(input);
+                    free(input);
+                    if ((0 <= index) && (index <= (*n + 1))) {
+                        printf("Enter new element:\n");
+                        input = readline_();
+                        part temp = read_part(input);
+                        free(input);
+                        if(temp.name){
+                            mas = realloc(mas, (*n + 1) * sizeof(part));
+                            for (size_t i = *n; i > index; i--){
+                                copy_part(mas + i, mas + (i - 1));
+                                free(mas[i-1].name);
+                            }
+                            copy_part(mas + index, &temp);
+                            *n += 1;
+                            free(temp.name);
+                            break;
+                        } else {
+                            help(2, 0);
+                            break;
+                        }
+                    } else {
+                        printf("Wrong index.\n");
+                        help(2, 0);
+                        break;
+                    }
                 case '3':
-                    printf("Enter new element.\n");
+                    printf("Don't available now.\n");
+                    //printf("Enter new element.\n");
                     //reading part
                     //insert element
                     free(input);
-                    return mas;
+                    break;
                 case '4':
-
-                    //random generation of data
+                    mas = sort_menu(mas, *n);
                     free(input);
-                    return mas;
+                    break;
                 default:
                     help(-1, -1);
                     free(input);
@@ -388,17 +405,20 @@ part *sort_menu(part *mas, size_t n){
                     free(input);
                     break;
                 case '2':
+                    printf("Don't available now.\n");
                     //start quick sort
                     free(input);
-                    return mas;
+                    break;
                 case '3':
+                    printf("Don't available now\n");
                     //start pair insertion sort
                     free(input);
-                    return mas;
+                    break;
                 case '4':
+                    printf("Don't available now.\n");
                     //radix sort
                     free(input);
-                    return mas;
+                    break;
                 default:
                     help(1, -1);
                     free(input);
@@ -491,6 +511,7 @@ void copy_part(part *dst, part *src){
 part *timing(part *mas, size_t n){
     return &mas[0];
 }
+
 int output(part *mas, size_t n){
     help(4, 0);
     while(1) {
@@ -509,6 +530,7 @@ int output(part *mas, size_t n){
                     for (int i = 0; i < n; i++)
                         printf("id: %s, name: %s, amount: %d.\n", mas[i].id, mas[i].name, (int) mas[i].amount);
                     free(input);
+                    help(4, 0);
                     break;
                 case '3':
                     free(input);
@@ -520,6 +542,7 @@ int output(part *mas, size_t n){
                         for (int i = 0; i < n; i++)
                             fprintf(file, "%s %s %d\n", mas[i].id, mas[i].name, (int) mas[i].amount);
                         fclose(file);
+                        help(4, 0);
                     } else{
                         printf("File can't open or make.\n");
                         help(4, 0);
@@ -535,5 +558,6 @@ int output(part *mas, size_t n){
         }
     }
 }
+
 //read_part - checked
 //readline_ - checked
