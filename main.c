@@ -244,8 +244,11 @@ part *input_(part *mas, size_t *n){
                                 *n += 1;
                                 mas = realloc(mas, (*n) * sizeof(part));
                                 copy_part(mas + (*n - 1), &temp);
+                                free(temp.name);
                             } else{
+                                free(str);
                                 free_(mas, n);
+                                mas = NULL;
                                 break;
                             }
                             free(str);
@@ -258,6 +261,7 @@ part *input_(part *mas, size_t *n){
                     } else{
                         printf("File can't open.\n");
                         help(1, 0);
+                        free(str);
                         free(input);
                         break;
                     }
@@ -333,7 +337,6 @@ void free_(part *mas, size_t *n){
         free(mas[i].name);
     }
     free(mas);
-    mas = NULL;
     *n = 0;
 }
 
