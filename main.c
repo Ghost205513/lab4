@@ -13,28 +13,29 @@ typedef struct part{
 void help(int menu, int mod);
 char *readline_();
 
-part *input_(part *mas, size_t *n);
-part *treat(part *mas, size_t *n);
-part *timing(part *mas, size_t n);
+part *input_(part *mas, size_t *n, int *flag);
+part *treat(part *mas, size_t *n, int *flag);
+part *timing_menu(part *mas, size_t n, int *flag);
 int output(part *mas, size_t n);
 part read_part(char *s);
 char *freadline_(FILE *file);
 void copy_part(part *dst, part *src);
 void free_(part *mas, size_t *n);
-int check_natural(char *s);
+int check_natural(const char *s);
 part gen_part();
 char gen_char();
 part *sort_menu(part *mas, size_t n, int *flag);
 void swap(part *one, part *two);
-void quick_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
-void pair_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
-void radix_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *));
+void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *));
+void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *));
+void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *));
 int compare_id(const void *a, const void *b);
 int compare_name(const void *a, const void *b);
-int compare_amount(const void *a, const void *b)
+int compare_amount(const void *a, const void *b);
 
 
 int main(){
+    int *flag [3] = {0};
     srand(time(NULL));
     part *data = NULL;
     size_t n = 0;
@@ -57,7 +58,7 @@ int main(){
                     free(input);
                     break;
                 case '2':
-                    data = input_(data, &n);
+                    data = input_(data, &n, (int *) flag);
                     free(input);
                     break;
                 case '3':
@@ -66,14 +67,14 @@ int main(){
                     break;
                 case '4':
                     if (data)
-                        data = treat(data, &n);
+                        data = treat(data, &n, (int *) flag);
                     else
                         help(0,-1);
                     free(input);
                     break;
                 case '5':
                     if (data)
-                        data = timing(data, n);
+                        data = timing_menu(data, n, (int *) flag);
                     else
                         help(0,-1);
                     free(input);
@@ -217,7 +218,7 @@ char *freadline_(FILE *file){
 }
 
 
-part *input_(part *mas, size_t *n){
+part *input_(part *mas, size_t *n, int *flag){
     help(1, 0);
     while(1) {
         char *input = readline_();
@@ -252,6 +253,9 @@ part *input_(part *mas, size_t *n){
                         input = readline_();
                     }
                     help(0, 1);
+                    flag[0] = 0;
+                    flag[1] = 0;
+                    flag[2] = 0;
                     return mas;
                 case '3':
                     free(input);
@@ -278,8 +282,12 @@ part *input_(part *mas, size_t *n){
                             free(input);
                             input = freadline_(file);
                         }
-                        if (mas)
-                            free(input);
+                        if (!mas){
+                            //free(input);
+                            flag[0] = 0;
+                            flag[1] = 0;
+                            flag[2] = 0;
+                        }
                         fclose(file);
                         help(0, 1);
                         return mas;
@@ -298,6 +306,9 @@ part *input_(part *mas, size_t *n){
                         mas = calloc(*n, sizeof(part));
                         for(int i = 0; i < *n; i++)
                             mas[i] = gen_part();
+                        flag[0] = 0;
+                        flag[1] = 0;
+                        flag[2] = 0;
                     } else{
                         printf("Wrong format of argument \"amount of elements data\".\n");
                     }
@@ -331,10 +342,7 @@ char gen_char(){
     return (char) (rand() % 2 ? rand() % 26 + 97 : rand() % 26 + 65);
 }
 
-part *treat(part *mas, size_t *n){
-    int flag_id = 0; //not work
-    int flag_name = 0;
-    int flag_amount = 0;
+part *treat(part *mas, size_t *n, int *flag){
     help(2, 0);
     while(1) {
         char *input = readline_();
@@ -367,10 +375,11 @@ part *treat(part *mas, size_t *n){
                             }
                             copy_part(mas + index, &temp);
                             *n += 1;
-                            flag_id = 0;
-                            flag_name = 0;
-                            flag_amount = 0;
+                            flag[0] = 0;
+                            flag[1] = 0;
+                            flag[2] = 0;
                             free(temp.name);
+                            printf("Element inserted.\n");
                             break;
                         } else {
                             help(2, 0);
@@ -388,7 +397,7 @@ part *treat(part *mas, size_t *n){
                     //insert element
                     break;
                 case '4':
-                    mas = sort_menu(mas, *n, sort_flag);
+                    mas = sort_menu(mas, *n, flag);
                     free(input);
                     break;
                 default:
@@ -432,19 +441,31 @@ part *sort_menu(part *mas, size_t n, int *flag){
                     if (input && (strlen(input) == 1)) {
                         switch (input[0]) {
                             case '0':
-                                printf("Don't available now.\n");
-                                //start quick sort, id
+                                quick_sort(mas, n, compare_id);
+                                printf("Sorted by \"id\" field.");
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '1':
-                                printf("Don't available now\n");
-                                //start quick sort, name
+                                quick_sort(mas, n, compare_name);
+                                printf("Sorted by \"name\" field.");
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '2':
-                                printf("Don't available now.\n");
-                                //start quick sort, amount
+                                quick_sort(mas, n, compare_amount);
+                                printf("Sorted by \"amount\" field.");
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
                                 free(input);
+                                help(3, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -463,19 +484,31 @@ part *sort_menu(part *mas, size_t n, int *flag){
                     if (input && (strlen(input) == 1)) {
                         switch (input[0]) {
                             case '0':
-                                printf("Don't available now.\n");
-                                //start pair insert sort, id
+                                pair_sort(mas, n, compare_id);
+                                printf("Sorted by \"id\" field.");
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '1':
-                                printf("Don't available now\n");
-                                //start pair insert sort, name
+                                pair_sort(mas, n, compare_name);
+                                printf("Sorted by \"name\" field.");
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '2':
-                                printf("Don't available now.\n");
-                                //start pair insert sort, amount
+                                pair_sort(mas, n, compare_amount);
+                                printf("Sorted by \"amount\" field.");
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
                                 free(input);
+                                help(3, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -494,19 +527,31 @@ part *sort_menu(part *mas, size_t n, int *flag){
                     if (input && (strlen(input) == 1)) {
                         switch (input[0]) {
                             case '0':
-                                printf("Don't available now.\n");
-                                //start radix sort, id
+                                radix_sort(mas, n, compare_id);
+                                printf("Sorted by \"id\" field.");
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '1':
-                                printf("Don't available now\n");
-                                //start radix sort, name
+                                radix_sort(mas, n, compare_name);
+                                printf("Sorted by \"name\" field.");
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
                                 free(input);
+                                help(3, 0);
                                 break;
                             case '2':
-                                printf("Don't available now.\n");
-                                //start radix sort, amount
+                                radix_sort(mas, n, compare_amount);
+                                printf("Sorted by \"amount\" field.");
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
                                 free(input);
+                                help(3, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -528,7 +573,7 @@ part *sort_menu(part *mas, size_t n, int *flag){
     }
 }
 
-int check_natural(char *s){
+int check_natural(const char *s){
     int ans = 0;
     if(*s == '0')
         return 0;
@@ -548,7 +593,7 @@ part read_part(char *s){
     char *name = strtok(NULL, " \t");
     char *amount = strtok(NULL, " \t");
     char *next = strtok(NULL, " \t");
-    size_t amount_i = 0;
+    size_t amount_i;
     part temp;
 
     if (id && name && amount && !next){
@@ -606,8 +651,9 @@ void copy_part(part *dst, part *src){
     (*dst).amount = (*src).amount;
 }
 
-part *timing(part *mas, size_t n){
+part *timing_menu(part *mas, size_t n, int *flag){
     help(5, 0);
+    clock_t start, end;
     while(1) {
         char *input = readline_();
         if (input && (strlen(input) == 1)) {
@@ -622,21 +668,156 @@ part *timing(part *mas, size_t n){
                     break;
                 case '2':
                     free(input);
+                    printf("Choose field to sort.\n");
+                    help(3, 1);
+                    input = readline_();
+                    if (input && (strlen(input) == 1)) {
+                        switch (input[0]) {
+                            case '0':
+                                start = clock();
+                                quick_sort(mas, n, compare_id);
+                                end = clock();
+                                printf("Sorted by \"id\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '1':
+                                start = clock();
+                                quick_sort(mas, n, compare_name);
+                                end = clock();
+                                printf("Sorted by \"name\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '2':
+                                start = clock();
+                                quick_sort(mas, n, compare_amount);
+                                end = clock();
+                                printf("Sorted by \"amount\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            default:
+                                help(-1, -1);
+                                free(input);
+                        }
+                    } else{
+                        help(-1, -1);
+                        free(input);
+                    }
+                    break;
                 case '3':
-                    printf("Don't available now.\n");
-                    //printf("Enter new element.\n");
-                    //reading part
-                    //insert element
+                    free(input);
+                    printf("Choose field to sort.\n");
+                    help(3, 1);
+                    input = readline_();
+                    if (input && (strlen(input) == 1)) {
+                        switch (input[0]) {
+                            case '0':
+                                start = clock();
+                                pair_sort(mas, n, compare_id);
+                                end = clock();
+                                printf("Sorted by \"id\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '1':
+                                start = clock();
+                                pair_sort(mas, n, compare_name);
+                                end = clock();
+                                printf("Sorted by \"name\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '2':
+                                start = clock();
+                                pair_sort(mas, n, compare_amount);
+                                end = clock();
+                                printf("Sorted by \"amount\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            default:
+                                help(-1, -1);
+                                free(input);
+                        }
+                    } else{
+                        help(-1, -1);
+                        free(input);
+                    }
                     break;
                 case '4':
-                    mas = sort_menu(mas, *n, flag_id);
                     free(input);
+                    printf("Choose field to sort.\n");
+                    help(3, 1);
+                    input = readline_();
+                    if (input && (strlen(input) == 1)) {
+                        switch (input[0]) {
+                            case '0':
+                                start = clock();
+                                radix_sort(mas, n, compare_id);
+                                end = clock();
+                                printf("Sorted by \"id\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 1;
+                                flag[1] = 0;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '1':
+                                start = clock();
+                                radix_sort(mas, n, compare_name);
+                                end = clock();
+                                printf("Sorted by \"name\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 1;
+                                flag[2] = 0;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            case '2':
+                                start = clock();
+                                radix_sort(mas, n, compare_amount);
+                                end = clock();
+                                printf("Sorted by \"amount\" field, %d time spent in sec.", (int) ((end - start) / CLOCKS_PER_SEC));
+                                flag[0] = 0;
+                                flag[1] = 0;
+                                flag[2] = 1;
+                                free(input);
+                                help(3, 0);
+                                break;
+                            default:
+                                help(-1, -1);
+                                free(input);
+                        }
+                    } else{
+                        help(-1, -1);
+                        free(input);
+                    }
                     break;
                 default:
                     help(-1, -1);
                     free(input);
             }
-        } else {
+        } else{
             help(-1, -1);
             free(input);
         }
@@ -702,7 +883,7 @@ void swap(part *one, part *two){
 
 void qs(part *items, size_t left, size_t right, int (*compare) (const void *, const void *)){
     size_t i, j;
-    part x, y;
+    part x;
     i = left;
     j = right;
     copy_part(&x, &items[(left + right) / 2]);
@@ -724,16 +905,20 @@ void qs(part *items, size_t left, size_t right, int (*compare) (const void *, co
     free(x.name);
 }
 
-void quick_sort(void *base, size_t n, size_t size, int (*compare) (const void *, const void *)){
+void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
     qs((part *) base, 0, n - 1, compare);
 }
 
+void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
+
+}
+
 int compare_id(const void *a, const void *b){
-    return strcmp((*(part *) a).id, (*(part *) a).id);
+    return strcmp((*(part *) a).id, (*(part *) b).id);
 }
 
 int compare_name(const void *a, const void *b){
-    return strcmp((*(part *) a).name, (*(part *) a).name);
+    return strcmp((*(part *) a).name, (*(part *) b).name);
 }
 
 int compare_amount(const void *a, const void *b){
