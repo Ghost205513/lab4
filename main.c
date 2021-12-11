@@ -891,7 +891,7 @@ void qs(part *items, size_t left, size_t right, int (*compare) (const void *, co
         while((compare(&items[i], &x) < 0) && (i < right))
             i++;
         while((compare(&x, &items[j]) < 0) && (j > left))
-            j++;
+            j--;
         if (i <= j){
             swap(&items[i], &items[j]);
             i++;
@@ -910,7 +910,11 @@ void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *
 }
 
 void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
+    printf("Not available.\n");
+}
 
+void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
+    printf("Not available.\n");
 }
 
 int compare_id(const void *a, const void *b){
