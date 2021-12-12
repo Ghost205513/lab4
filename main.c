@@ -909,12 +909,53 @@ void qs(part *items, size_t left, size_t right, int (*compare) (const void *, co
 }
 
 void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
-    printf("Not available.\n");
-    //qs((part *) base, 0, n - 1, compare);
+    qs((part *) base, 0, n - 1, compare);
 }
 
 void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
-    printf("Not available.\n");
+    for(size_t i = 1; i < n; i++){
+        part max_, min_;
+        size_t j;
+
+        if(compare(((part *) base) + (i - 1), ((part *) base) + i) < 0){
+            copy_part(&max_,((part *) base) + i);
+            copy_part(&min_, ((part *) base) + (i - 1));
+        } else {
+            copy_part(&min_,((part *) base) + i);
+            copy_part(&max_, ((part *) base) + (i - 1));
+        }
+
+        j = i - 2;
+
+        while((j >= 0) || (compare(&max_,((part *) base) + j) < 0)){
+            free((*((part *) base + (j + 2))).name);
+            copy_part(((part *) base + (j + 2)), ((part *) base) + j);
+            j--;
+        }
+        j++;
+        free((*(((part *) base) + (j + 1))).name);
+        copy_part(((part *) base) + (j + 1), &max_);
+
+        while((j >= 0) || (compare(&min_,((part *) base) + j) < 0)){
+            free((*((part *) base + (j + 1))).name);
+            copy_part(((part *) base + (j + 1)), ((part *) base) + j);
+            j--;
+        }
+        free((*(((part *) base) + (j + 1))).name);
+        copy_part(((part *) base) + (j + 1), &min_);
+
+    }
+
+    part last;
+    size_t i = n - 2;
+
+    copy_part(&last, ((part *) base) + (n - 1));
+
+    while((i >= 0) || (compare(&last,((part *) base) + i) < 0)){
+        free((*((part *) base + (i + 1))).name);
+        copy_part(((part *) base + (i + 1)), ((part *) base) + i);
+        i--;
+    }
 }
 
 void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
