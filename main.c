@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stddef.h>
 #include <time.h>
+#include <stdint.h>
 
 typedef struct part{
     char id[9];
@@ -300,9 +301,11 @@ part *input_(part *mas, size_t *n, int *flag){
                     free(input);
                     printf("Enter amount of elements data:\n");
                     input = readline_();
-                    *n = check_natural(input);
+                    size_t n_temp = check_natural(input);
                     free(input);
-                    if(*n){
+                    if(n_temp){
+                        free_(mas, n);
+                        *n = n_temp;
                         mas = calloc(*n, sizeof(part));
                         for(int i = 0; i < *n; i++)
                             mas[i] = gen_part();
@@ -873,38 +876,49 @@ int output(part *mas, size_t n){
 
 void swap(part *one, part *two){
     part temp;
+
     if((*one).name)
         copy_part(&temp, one);
+
     free((*one).name);
     (*one).name = NULL;
+
     if((*two).name)
         copy_part(one, two);
+
     free((*two).name);
     copy_part(two, &temp);
     free(temp.name);
 }
 
 void qs(part *items, size_t left, size_t right, int (*compare) (const void *, const void *)){
-    size_t i, j;
+    int64_t i, j;
     part x;
-    i = left;
-    j = right;
+
+    i = (int64_t) left;
+    j = (int64_t) right;
     copy_part(&x, &items[(left + right) / 2]);
+
     do{
-        while((compare(&items[i], &x) < 0) && (i < right))
+        while((i < (int64_t) right) && (compare(&items[i], &x) < 0))
             i++;
-        while((compare(&x, &items[j]) < 0) && (j > left))
+
+        while((j > (int64_t) left) && (compare(&x, &items[j]) < 0))
             j--;
+
         if (i <= j){
             swap(&items[i], &items[j]);
             i++;
             j--;
         }
     } while(i <= j);
-    if(left < j)
+
+    if((int64_t) left < j)
         qs(items, left, j, compare);
+
     if(i < right)
         qs(items, i, right, compare);
+
     free(x.name);
 }
 
@@ -913,9 +927,9 @@ void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *
 }
 
 void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
-    for(size_t i = 1; i < n; i++){
+    for(size_t i = 1; i < n; i = i + 2){
         part max_, min_;
-        size_t j;
+        int64_t j;
 
         if(compare(((part *) base) + (i - 1), ((part *) base) + i) < 0){
             copy_part(&max_,((part *) base) + i);
@@ -927,31 +941,32 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
 
         j = i - 2;
 
-        while((j >= 0) || (compare(&max_,((part *) base) + j) < 0)){
+        while((j >= 0) && (compare(&max_,((part *) base) + j) < 0)){
             free((*((part *) base + (j + 2))).name);
             copy_part(((part *) base + (j + 2)), ((part *) base) + j);
             j--;
         }
+
         j++;
         free((*(((part *) base) + (j + 1))).name);
         copy_part(((part *) base) + (j + 1), &max_);
 
-        while((j >= 0) || (compare(&min_,((part *) base) + j) < 0)){
+        while((j >= 0) && (compare(&min_,((part *) base) + j) < 0)){
             free((*((part *) base + (j + 1))).name);
             copy_part(((part *) base + (j + 1)), ((part *) base) + j);
             j--;
         }
+
         free((*(((part *) base) + (j + 1))).name);
         copy_part(((part *) base) + (j + 1), &min_);
-
     }
 
     part last;
-    size_t i = n - 2;
+    int64_t i = n - 2;
 
     copy_part(&last, ((part *) base) + (n - 1));
 
-    while((i >= 0) || (compare(&last,((part *) base) + i) < 0)){
+    while((i >= 0) && (compare(&last,((part *) base) + i) < 0)){
         free((*((part *) base + (i + 1))).name);
         copy_part(((part *) base + (i + 1)), ((part *) base) + i);
         i--;
