@@ -255,9 +255,14 @@ part *input_(part *mas, size_t *n, int *flag){
                         free(temp.name);
                         input = readline_();
                     }
-                    help(0, 1);
-                    *flag = -1;
-                    return mas;
+                    if(mas && (*mas).name){
+                        help(0, 1);
+                        *flag = -1;
+                        return mas;
+                    } else{
+                        help(1, 0);
+                        break;
+                    }
                 case '3':
                     free(input);
                     printf("Enter path to file:\n");
@@ -299,20 +304,22 @@ part *input_(part *mas, size_t *n, int *flag){
                     free(input);
                     printf("Enter amount of elements data:\n");
                     input = readline_();
-                    size_t n_temp = check_natural(input);
+                    int64_t n_temp = check_natural(input);
                     free(input);
-                    if(n_temp){
+                    if(0 < n_temp){
                         free_(mas, n);
                         *n = n_temp;
                         mas = calloc(*n, sizeof(part));
                         for(int i = 0; i < *n; i++)
                             mas[i] = gen_part();
                         *flag = -1;
+                        help(0, 1);
+                        return mas;
                     } else{
                         printf("Wrong format of argument \"amount of elements data\".\n");
+                        help(1, 0);
+                        break;
                     }
-                    help(0, 1);
-                    return mas;
                 default:
                     help(-1, -1);
                     free(input);
@@ -359,7 +366,7 @@ part *treat(part *mas, size_t *n, int *flag){
                     free(input);
                     printf("Enter index to insert (counting form zero):\n");
                     input = readline_();
-                    size_t index = check_natural(input);
+                    int64_t index = check_natural(input);
                     free(input);
                     if ((0 <= index) && (index <= (*n + 1))) {
                         printf("Enter new element:\n");
@@ -385,41 +392,47 @@ part *treat(part *mas, size_t *n, int *flag){
                 case '3':
                     free(input);
                     part temp;
-                    if(temp.name){
-                        switch (*flag) {
-                            case 0:
-                                printf("Enter new element:\n");
-                                input = readline_();
-                                temp = read_part(input);
-                                free(input);
+                    switch (*flag) {
+                        case 0:
+                            printf("Enter new element:\n");
+                            input = readline_();
+                            temp = read_part(input);
+                            free(input);
+                            if(temp.name)
                                 mas = index_insert(bin_search(temp, mas, *n, compare_id), &temp, mas, n);
-                                break;
-                            case 1:
-                                printf("Enter new element:\n");
-                                input = readline_();
-                                temp = read_part(input);
-                                free(input);
+                            else
+                                help(2, 0);
+                            break;
+                        case 1:
+                            printf("Enter new element:\n");
+                            input = readline_();
+                            temp = read_part(input);
+                            free(input);
+                            if(temp.name)
                                 mas = index_insert(bin_search(temp, mas, *n, compare_name), &temp, mas, n);
-                                break;
-                            case 2:
-                                printf("Enter new element:\n");
-                                input = readline_();
-                                temp = read_part(input);
-                                free(input);
+                            else
+                                help(2, 0);
+                            break;
+                        case 2:
+                            printf("Enter new element:\n");
+                            input = readline_();
+                            temp = read_part(input);
+                            free(input);
+                            if(temp.name)
                                 mas = index_insert(bin_search(temp, mas, *n, compare_amount), &temp, mas, n);
-                                break;
-                            default:
-                                printf("No sorted field.\n");
-                                break;
-                        }
+                            else
+                                help(2, 0);
+                            break;
+                        default:
+                            printf("No sorted field.\n");
+                            break;
+                    }
+                    if(temp.name){
                         free(temp.name);
                         printf("Element inserted.\n");
-                        help(2, 0);
-                        break;
-                    } else {
-                        help(2, 0);
-                        break;
                     }
+                    help(2, 0);
+                    break;
                 case '4':
                     mas = sort_menu(mas, *n, flag);
                     free(input);
@@ -628,7 +641,7 @@ part read_part(char *s){
     char *name = strtok(NULL, " \t");
     char *amount = strtok(NULL, " \t");
     char *next = strtok(NULL, " \t");
-    size_t amount_i;
+    int64_t amount_i;
     part temp;
 
     if (id && name && amount && !next){
