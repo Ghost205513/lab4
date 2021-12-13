@@ -939,7 +939,7 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
             copy_part(&max_, ((part *) base) + (i - 1));
         }
 
-        j = i - 2;
+        j = (int64_t) i - 2;
 
         while((j >= 0) && (compare(&max_,((part *) base) + j) < 0)){
             free((*((part *) base + (j + 2))).name);
@@ -950,6 +950,7 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
         j++;
         free((*(((part *) base) + (j + 1))).name);
         copy_part(((part *) base) + (j + 1), &max_);
+        j--;
 
         while((j >= 0) && (compare(&min_,((part *) base) + j) < 0)){
             free((*((part *) base + (j + 1))).name);
@@ -959,10 +960,12 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
 
         free((*(((part *) base) + (j + 1))).name);
         copy_part(((part *) base) + (j + 1), &min_);
+        free(min_.name);
+        free(max_.name);
     }
 
     part last;
-    int64_t i = n - 2;
+    int64_t i = (int64_t) n - 2;
 
     copy_part(&last, ((part *) base) + (n - 1));
 
@@ -971,6 +974,8 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
         copy_part(((part *) base + (i + 1)), ((part *) base) + i);
         i--;
     }
+
+    free(last.name);
 }
 
 void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
