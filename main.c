@@ -450,7 +450,7 @@ part *treat(part *mas, size_t *n, int *flag){
 
 size_t bin_search(part element, part *base, size_t n, int (*compare) (const void *, const void *)){
     size_t l = 0;
-    size_t r = n - 1;
+    size_t r = n;
     while (l < r){
         size_t m = (l + r) / 2;
         if(compare(base + m, &element) < 0)
@@ -728,7 +728,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 0;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '1':
                                 start = clock();
@@ -737,7 +737,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 1;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '2':
                                 start = clock();
@@ -746,7 +746,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 2;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -771,7 +771,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 0;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '1':
                                 start = clock();
@@ -780,7 +780,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 1;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '2':
                                 start = clock();
@@ -789,7 +789,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 2;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -814,7 +814,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 0;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '1':
                                 start = clock();
@@ -823,7 +823,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 1;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             case '2':
                                 start = clock();
@@ -832,7 +832,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
                                 *flag = 2;
                                 free(input);
-                                help(3, 0);
+                                help(5, 0);
                                 break;
                             default:
                                 help(-1, -1);
@@ -1017,7 +1017,7 @@ int compare_name(const void *a, const void *b){
     return strcmp((*(part *) a).name, (*(part *) b).name);
 }
 
-int compare_amount(const void *a, const void *b){
+int compare_amount(const void *a, const void *b) {
     if ((*(part *) a).amount < (*(part *) b).amount)
         return -1;
     else if ((*(part *) a).amount > (*(part *) b).amount)
