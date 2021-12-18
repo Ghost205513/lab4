@@ -4,6 +4,8 @@
 #include <stddef.h>
 #include <time.h>
 #include <stdint.h>
+#include<math.h>
+
 
 typedef struct part{
     char id[9];
@@ -29,11 +31,15 @@ part *sort_menu(part *mas, size_t n, int *flag);
 void swap(part *one, part *two);
 void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *));
 void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *));
-void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *));
+void radix_sort(void *base, size_t n, size_t size, char *(*field) (void *));
+void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *));
+char *get_id(part * a);
+char *get_name(part * a);
 int compare_id(const void *a, const void *b);
 int compare_name(const void *a, const void *b);
 int compare_amount(const void *a, const void *b);
 part *index_insert(size_t index, part *element, part *mas, size_t *n);
+part *index_delete(size_t index, part *mas, size_t *n);
 size_t bin_search(part element, part *base, size_t n, int (*compare) (const void *, const void *));
 
 
@@ -65,7 +71,10 @@ int main(){
                     free(input);
                     break;
                 case '3':
-                    output(data, n);
+                    if (data)
+                        output(data, n);
+                    else
+                        help(0, -1);
                     free(input);
                     break;
                 case '4':
@@ -126,7 +135,8 @@ void help(int menu, int mod){
                    "1. Help.\n"
                    "2. Index insert.\n"
                    "3. Insert to sort data.\n"
-                   "4. Sort.\n");
+                   "4. Delete by index.\n"
+                   "5. Sort.\n");
             break;
         case 3:
             if(!mod)
@@ -242,6 +252,11 @@ part *input_(part *mas, size_t *n, int *flag){
                     free(input);
                     printf("Use Ctrl+D to stop input data.\n");
                     input = readline_();
+                    if (input) {
+                        free_(mas, n);
+                        mas = NULL;
+                        *flag = -1;
+                    }
                     while(input){
                         part temp;
                         temp = read_part(input);
@@ -257,7 +272,6 @@ part *input_(part *mas, size_t *n, int *flag){
                     }
                     if(mas && (*mas).name){
                         help(0, 1);
-                        *flag = -1;
                         return mas;
                     } else{
                         help(1, 0);
@@ -271,6 +285,11 @@ part *input_(part *mas, size_t *n, int *flag){
                     free(input);
                     if(file){
                         input = freadline_(file);
+                        if (input) {
+                            free_(mas, n);
+                            mas = NULL;
+                            *flag = -1;
+                        }
                         while (input){
                             part temp;
                             temp = read_part(input);
@@ -287,10 +306,6 @@ part *input_(part *mas, size_t *n, int *flag){
                             }
                             free(input);
                             input = freadline_(file);
-                        }
-                        if (!mas){
-                            //free(input);
-                            *flag = -1;
                         }
                         fclose(file);
                         help(0, 1);
@@ -434,6 +449,21 @@ part *treat(part *mas, size_t *n, int *flag){
                     help(2, 0);
                     break;
                 case '4':
+                    free(input);
+                    printf("Enter index to delete (counting form zero):\n");
+                    input = readline_();
+                    index = check_natural(input);
+                    free(input);
+                    if ((0 <= index) && (index <= (*n + 1))) {
+                        mas = index_delete(index, mas, n);
+                        printf("Element deleted.\n");
+                        break;
+                    } else {
+                        printf("Wrong index.\n");
+                        help(2, 0);
+                        break;
+                    }
+                case '5':
                     mas = sort_menu(mas, *n, flag);
                     free(input);
                     break;
@@ -470,6 +500,19 @@ part *index_insert(size_t index, part *element, part *mas, size_t *n){
     }
 
     copy_part(mas + index, element);
+    *n += 1;
+
+    return mas;
+}
+
+part *index_delete(size_t index, part *mas, size_t *n){
+    for (size_t i = index; i < *n; i++){
+        free(mas[i].name);
+        copy_part(mas + i, mas + (i + 1));
+    }
+
+    free(mas[(*n-1)].name);
+    mas = realloc(mas, (*n - 1) * sizeof(part));
     *n += 1;
 
     return mas;
@@ -579,21 +622,21 @@ part *sort_menu(part *mas, size_t n, int *flag){
                     if (input && (strlen(input) == 1)) {
                         switch (input[0]) {
                             case '0':
-                                radix_sort(mas, n, compare_id);
+                                radix_sort(mas, n, 0, get_id);
                                 printf("Sorted by \"id\" field.\n");
                                 *flag = 0;
                                 free(input);
                                 help(3, 0);
                                 break;
                             case '1':
-                                radix_sort(mas, n, compare_name);
+                                radix_sort(mas, n, 1, get_name);
                                 printf("Sorted by \"name\" field.\n");
                                 *flag = 1;
                                 free(input);
                                 help(3, 0);
                                 break;
                             case '2':
-                                radix_sort(mas, n, compare_amount);
+                                radix_sort(mas, n, 2, get_id);
                                 printf("Sorted by \"amount\" field.\n");
                                 *flag = 2;
                                 free(input);
@@ -620,8 +663,9 @@ part *sort_menu(part *mas, size_t n, int *flag){
 }
 
 int64_t check_natural(const char *s){
+    size_t len = strlen(s);
     int64_t ans = 0;
-    if((*s == '0') && (strlen(s) == 1))
+    if((*s == '0') && (len == 1))
         return 0;
     else if (*s == '0')
         return -1;
@@ -632,6 +676,10 @@ int64_t check_natural(const char *s){
         } else {
             return -1;
         }
+    }
+    if ((len > 19) || ((len == 19) && (ans < 0))) {
+        printf("Too big amount\n");
+        return -1;
     }
     return ans;
 }
@@ -725,7 +773,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 quick_sort(mas, n, compare_id);
                                 end = clock();
-                                printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"id\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 0;
                                 free(input);
                                 help(5, 0);
@@ -734,7 +782,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 quick_sort(mas, n, compare_name);
                                 end = clock();
-                                printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"name\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 1;
                                 free(input);
                                 help(5, 0);
@@ -743,7 +791,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 quick_sort(mas, n, compare_amount);
                                 end = clock();
-                                printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"amount\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 2;
                                 free(input);
                                 help(5, 0);
@@ -768,7 +816,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 pair_sort(mas, n, compare_id);
                                 end = clock();
-                                printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"id\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 0;
                                 free(input);
                                 help(5, 0);
@@ -777,7 +825,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 pair_sort(mas, n, compare_name);
                                 end = clock();
-                                printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"name\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 1;
                                 free(input);
                                 help(5, 0);
@@ -786,7 +834,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 start = clock();
                                 pair_sort(mas, n, compare_amount);
                                 end = clock();
-                                printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"amount\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 2;
                                 free(input);
                                 help(5, 0);
@@ -809,27 +857,27 @@ part *timing_menu(part *mas, size_t n, int *flag){
                         switch (input[0]) {
                             case '0':
                                 start = clock();
-                                radix_sort(mas, n, compare_id);
+                                radix_sort(mas, n, 0, get_id);
                                 end = clock();
-                                printf("Sorted by \"id\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"id\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 0;
                                 free(input);
                                 help(5, 0);
                                 break;
                             case '1':
                                 start = clock();
-                                radix_sort(mas, n, compare_name);
+                                radix_sort(mas, n, 1, get_name);
                                 end = clock();
-                                printf("Sorted by \"name\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"name\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 1;
                                 free(input);
                                 help(5, 0);
                                 break;
                             case '2':
                                 start = clock();
-                                radix_sort(mas, n, compare_amount);
+                                radix_sort(mas, n, 2, get_id);
                                 end = clock();
-                                printf("Sorted by \"amount\" field, %d time spent in sec.\n", (int) ((end - start) / CLOCKS_PER_SEC));
+                                printf("Sorted by \"amount\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 2;
                                 free(input);
                                 help(5, 0);
@@ -1005,8 +1053,167 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
     free(last.name);
 }
 
-void radix_sort(void *base, size_t n, int (*compare) (const void *, const void *)){
-    printf("Not available.\n");
+void radix_sort(void *base, size_t n, size_t size, char *(*field) (void *)){
+    part* temp [52] = {NULL};
+    part* digits [10] = {NULL};
+    size_t dig_flag [10] = {0};
+    size_t len_t [52] = {0};
+    size_t max_len;
+    size_t min_len = SIZE_MAX;
+    size_t digit;
+    int len_d;
+    switch (size) {
+        case 0:
+            r_sort(base, n, 0, field);
+           /*for (int i = 0; i < 8; i++){
+               for(size_t j = 0; j < n; j++){
+                   int place = (int) ((part *) base + j)->id[i];
+                   place = place > 96 ? place - 97 + 26 : place - 65;
+                   temp[place] = index_insert(len_t[place], (part *) base + j, temp[place], &len_t[place]);
+               }
+
+               n = 0;
+
+               for (int j = 0; j < 52; j++){
+                   for (size_t k = 0; k < len_t[j]; k++){
+                       free(((part *)base + n)->name);
+                       copy_part((part *)base + n, temp[j] + k);
+                       n++;
+                   }
+
+                   free_(temp[j], &len_t[j]);
+                   temp[j] = NULL;
+                   len_t[j] = 0;
+               }
+           }*/
+           break;
+        /*case 1:
+            for (size_t i = 0; i < n; i++)
+                if(strlen(((part *) base + i)->name) < min_len)
+                    min_len = strlen(((part *) base + i)->name);
+            for (int i = 0; i < min_len; i++){
+                //size_t previous = 0;
+                for(size_t j = 0; j < n; j++){
+                    int place;
+                    //if(strlen(((part *) base + j)->name) > i){
+                    place = (int) ((part *) base + j)->name[i];
+                    place = place > 96 ? place - 97 + 26 : place - 65;
+                    temp[place] = index_insert(len_t[place], (part *) base + j, temp[place], &len_t[place]);
+                    } else{
+                        if (previous != -1) {
+                            radix_sort((part *)base + previous, j - previous + 1, 1,compare);
+                            previous = -1;
+                        } else {
+                            previous = j;
+                        }
+                    }
+                }
+
+
+                n = 0;
+                if (i == min_len - 1){
+                    for (int j = 0; j < 52; j++){
+                        for (size_t k = 0; k < len_t[j]; k++){
+                            if (strlen((temp[j] + k)->name) > min_len) {
+                                radix_sort(temp[j], len_t[j], 1, field);
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                for (int j = 0; j < 52; j++){
+                    for (size_t k = 0; k < len_t[j]; k++){
+                        free(((part *)base + n)->name);
+                        copy_part((part *)base + n, temp[j] + k);
+                        n++;
+                    }
+
+                    free_(temp[j], &len_t[j]);
+                    temp[j] = NULL;
+                    len_t[j] = 0;
+                }
+            }
+            break;*/
+        case 2:
+            max_len = 0;
+            for (size_t i = 0; i < n; i++)
+                digit = ((part *) base + i)->amount;
+                len_d = digit ? (int) log10l(digit) + 1 : 1;
+                if(len_d > max_len)
+                    max_len = len_d;
+                size_t flag = 1;
+            for (int i = 0; i < max_len; i++){
+
+                for(size_t j = 0; j < n; j++){
+                    int place = ((part *) base + j)->amount / flag % 10;
+                    digits[place] = index_insert(dig_flag[place], (part *) base + j, digits[place], &dig_flag[place]);
+                }
+
+                n = 0;
+
+                for (int j = 0; j < 52; j++){
+                    for (size_t k = 0; k < dig_flag[j]; k++){
+                        free(((part *)base + n)->name);
+                        copy_part((part *)base + n, digits[j] + k);
+                        n++;
+                    }
+
+                    free_(digits[j], &dig_flag[j]);
+                    digits[j] = NULL;
+                    dig_flag[j] = 0;
+                }
+                flag *= 10;
+            }
+            break;
+    }
+}
+
+void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *)){
+    part* temp [52] = {NULL};
+    size_t len_t [52] = {0};
+    size_t min_len = SIZE_MAX;
+
+    for (size_t i = 0; i < n; i++)
+        if(strlen(field((part *) mas + i)) < min_len)
+            min_len = strlen(field((part *) mas + i));
+
+    for(size_t j = 0; j < n; j++){
+        int place = (int) field((part *) mas + j)[d];
+        place = place > 96 ? place - 97 + 26 : place - 65;
+        temp[place] = index_insert(len_t[place], (part *) mas + j, temp[place], &len_t[place]);
+    }
+
+    for (int j = 0; j < 52; j++){
+        for (size_t k = 0; k < len_t[j]; k++){
+            if ((strlen(field(temp[j] + k)) > min_len) && (len_t[j] > 1)) {
+                r_sort(temp[j], len_t[j], d + 1, field);
+                break;
+            }
+        }
+    }
+
+    n = 0;
+
+    for (int j = 0; j < 52; j++){
+        for (size_t k = 0; k < len_t[j]; k++){
+            free(((part *)mas + n)->name);
+            copy_part((part *)mas + n, temp[j] + k);
+            n++;
+        }
+
+        free_(temp[j], &len_t[j]);
+        temp[j] = NULL;
+        len_t[j] = 0;
+    }
+}
+
+char *get_id(part * a){
+    return a->id;
+}
+
+char *get_name(part * a){
+    return a->name;
 }
 
 int compare_id(const void *a, const void *b){
