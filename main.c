@@ -33,13 +33,13 @@ void quick_sort(void *base, size_t n, int (*compare) (const void *, const void *
 void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *));
 void radix_sort(void *base, size_t n, size_t size, char *(*field) (void *));
 void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *));
-char *get_id(part * a);
-char *get_name(part * a);
+char *get_id(void * a);
+char *get_name(void * a);
 int compare_id(const void *a, const void *b);
 int compare_name(const void *a, const void *b);
 int compare_amount(const void *a, const void *b);
 part *index_insert(size_t index, part *element, part *mas, size_t *n);
-part *index_delete(size_t index, part *mas, size_t *n);
+part *index_delete(size_t index, size_t amount, part *mas, size_t *n);
 size_t bin_search(part element, part *base, size_t n, int (*compare) (const void *, const void *));
 
 
@@ -454,10 +454,21 @@ part *treat(part *mas, size_t *n, int *flag){
                     input = readline_();
                     index = check_natural(input);
                     free(input);
+                    printf("Enter amount of elements to delete (counting form zero):\n");
+                    input = readline_();
+                    size_t amount = check_natural(input);
+                    free(input);
                     if ((0 <= index) && (index <= (*n + 1))) {
-                        mas = index_delete(index, mas, n);
-                        printf("Element deleted.\n");
-                        break;
+                        if ((0 < amount) && (amount <= *n)){
+                            mas = index_delete(index, amount, mas, n);
+                            printf("Element(s) deleted.\n");
+                            help(2, 0);
+                            break;
+                        } else {
+                            printf("Wrong amount.\n");
+                            help(2, 0);
+                            break;
+                        }
                     } else {
                         printf("Wrong index.\n");
                         help(2, 0);
@@ -505,15 +516,18 @@ part *index_insert(size_t index, part *element, part *mas, size_t *n){
     return mas;
 }
 
-part *index_delete(size_t index, part *mas, size_t *n){
-    for (size_t i = index; i < *n; i++){
+part *index_delete(size_t index, size_t amount, part *mas, size_t *n){
+    for (size_t i = index; i < *n - amount; i++){
         free(mas[i].name);
-        copy_part(mas + i, mas + (i + 1));
+        copy_part(mas + i, mas + (i + amount));
     }
 
-    free(mas[(*n-1)].name);
-    mas = realloc(mas, (*n - 1) * sizeof(part));
-    *n += 1;
+    for (size_t i = *n - amount; i < *n; i++){
+        free(mas[i].name);
+    }
+
+    mas = realloc(mas, (*n - amount) * sizeof(part));
+    *n -= amount;
 
     return mas;
 }
@@ -629,7 +643,7 @@ part *sort_menu(part *mas, size_t n, int *flag){
                                 help(3, 0);
                                 break;
                             case '1':
-                                radix_sort(mas, n, 1, get_name);
+                                radix_sort(mas, n, 0, get_name);
                                 printf("Sorted by \"name\" field.\n");
                                 *flag = 1;
                                 free(input);
@@ -866,7 +880,7 @@ part *timing_menu(part *mas, size_t n, int *flag){
                                 break;
                             case '1':
                                 start = clock();
-                                radix_sort(mas, n, 1, get_name);
+                                radix_sort(mas, n, 0, get_name);
                                 end = clock();
                                 printf("Sorted by \"name\" field, %f time spent in sec.\n", (double) (end - start) / CLOCKS_PER_SEC);
                                 *flag = 1;
@@ -1054,87 +1068,15 @@ void pair_sort(void *base, size_t n, int (*compare) (const void *, const void *)
 }
 
 void radix_sort(void *base, size_t n, size_t size, char *(*field) (void *)){
-    part* temp [52] = {NULL};
     part* digits [10] = {NULL};
     size_t dig_flag [10] = {0};
-    size_t len_t [52] = {0};
     size_t max_len;
-    size_t min_len = SIZE_MAX;
     size_t digit;
     int len_d;
     switch (size) {
         case 0:
             r_sort(base, n, 0, field);
-           /*for (int i = 0; i < 8; i++){
-               for(size_t j = 0; j < n; j++){
-                   int place = (int) ((part *) base + j)->id[i];
-                   place = place > 96 ? place - 97 + 26 : place - 65;
-                   temp[place] = index_insert(len_t[place], (part *) base + j, temp[place], &len_t[place]);
-               }
-
-               n = 0;
-
-               for (int j = 0; j < 52; j++){
-                   for (size_t k = 0; k < len_t[j]; k++){
-                       free(((part *)base + n)->name);
-                       copy_part((part *)base + n, temp[j] + k);
-                       n++;
-                   }
-
-                   free_(temp[j], &len_t[j]);
-                   temp[j] = NULL;
-                   len_t[j] = 0;
-               }
-           }*/
            break;
-        /*case 1:
-            for (size_t i = 0; i < n; i++)
-                if(strlen(((part *) base + i)->name) < min_len)
-                    min_len = strlen(((part *) base + i)->name);
-            for (int i = 0; i < min_len; i++){
-                //size_t previous = 0;
-                for(size_t j = 0; j < n; j++){
-                    int place;
-                    //if(strlen(((part *) base + j)->name) > i){
-                    place = (int) ((part *) base + j)->name[i];
-                    place = place > 96 ? place - 97 + 26 : place - 65;
-                    temp[place] = index_insert(len_t[place], (part *) base + j, temp[place], &len_t[place]);
-                    } else{
-                        if (previous != -1) {
-                            radix_sort((part *)base + previous, j - previous + 1, 1,compare);
-                            previous = -1;
-                        } else {
-                            previous = j;
-                        }
-                    }
-                }
-
-
-                n = 0;
-                if (i == min_len - 1){
-                    for (int j = 0; j < 52; j++){
-                        for (size_t k = 0; k < len_t[j]; k++){
-                            if (strlen((temp[j] + k)->name) > min_len) {
-                                radix_sort(temp[j], len_t[j], 1, field);
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                for (int j = 0; j < 52; j++){
-                    for (size_t k = 0; k < len_t[j]; k++){
-                        free(((part *)base + n)->name);
-                        copy_part((part *)base + n, temp[j] + k);
-                        n++;
-                    }
-
-                    free_(temp[j], &len_t[j]);
-                    temp[j] = NULL;
-                    len_t[j] = 0;
-                }
-            }
-            break;*/
         case 2:
             max_len = 0;
             for (size_t i = 0; i < n; i++)
@@ -1172,11 +1114,6 @@ void radix_sort(void *base, size_t n, size_t size, char *(*field) (void *)){
 void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *)){
     part* temp [52] = {NULL};
     size_t len_t [52] = {0};
-    size_t min_len = SIZE_MAX;
-
-    for (size_t i = 0; i < n; i++)
-        if(strlen(field((part *) mas + i)) < min_len)
-            min_len = strlen(field((part *) mas + i));
 
     for(size_t j = 0; j < n; j++){
         int place = (int) field((part *) mas + j)[d];
@@ -1185,12 +1122,17 @@ void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *)){
     }
 
     for (int j = 0; j < 52; j++){
-        for (size_t k = 0; k < len_t[j]; k++){
-            if ((strlen(field(temp[j] + k)) > min_len) && (len_t[j] > 1)) {
-                r_sort(temp[j], len_t[j], d + 1, field);
-                break;
+        size_t previous = 0;
+        for(size_t i = 0; i < len_t[j]; i++){
+            if(strlen(field(temp[j] + i)) < d + 2){
+                if (previous + 1 < i){
+                    r_sort(temp[j] + previous, i - previous, d + 1, field);
+                }
+                previous = i + 1;
             }
         }
+        if ((len_t[j] > 1) && (previous == 0))
+            r_sort(temp[j], len_t[j], d + 1, field);
     }
 
     n = 0;
@@ -1208,12 +1150,12 @@ void r_sort(part *mas, size_t n, size_t d, char *(*field) (void *)){
     }
 }
 
-char *get_id(part * a){
-    return a->id;
+char *get_id(void * a){
+    return ((part *)a)->id;
 }
 
-char *get_name(part * a){
-    return a->name;
+char *get_name(void * a){
+    return ((part *)a)->name;
 }
 
 int compare_id(const void *a, const void *b){
